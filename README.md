@@ -1,0 +1,92 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# leaflethex
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+The goal of leaflethex is to create hexbin layers that can be added to
+plots made with the leaflet package.
+
+This is a work in progress and is not yet a functional R package. Stay
+tuned\!
+
+## Installation
+
+You can install the released version of leaflethex from
+[CRAN](https://CRAN.R-project.org) with:
+
+``` r
+install.packages("leaflethex")
+```
+
+And the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("rpruim/leaflethex")
+```
+
+## Example
+
+This is a basic example which shows you how to add the hexbin layer to
+your leaflet map:
+
+``` r
+library(leaflethex)
+df = tibble(
+  lat = rnorm(100),
+  lng = rnorm(100)
+)
+map <- leaflet::leaflet(df) %>% 
+  leaflet::addTiles() %>% 
+  leaflethex::add_hexbin(
+    radius = 19, 
+    lowEndColor = "yellow", 
+    highEndColor="red")
+map
+```
+
+## Parameters for add\_hexbin
+
+  - `data` - data frame or tibble - alternate data to use for this
+    hexbin instead of default map data
+
+  - `radius` - numeric - choose the base size for the hexagons
+
+  - `opacity` - decimal - between 0.0 and 1.0 - choose the percent of
+    opacity for the hexagons
+
+  - `duration` - numeric - positive milliseconds taken by the renderer
+    to draw the hexagons
+
+  - `lowEndColor` - string - choose the color for the smaller hexagons
+
+  - `highEndColor` - string - choose the color for the larger hexagons
+    
+    *Note About Coloring* - For best readable results, use colors that
+    have high contrast in hue and shade such as red and yellow. White is
+    generally a safe option for the `lowEndColor`, but the eye is better
+    at picking up changes in hue than changes in shade.
+
+  - `uniformSize` - boolean - choose if the size of the hexagons should
+    be uniform or variable
+
+  - `uniformColor` - string - choose a color to be uniform across the
+    different sizes of hexagons instead of variable color
+
+  - `sizeSummaryFunction` - string - choose a function from ‘count’,
+    ‘sum’, ‘max’, ‘min’, ‘mean’, or ‘median’ or give a valid JS
+    function (in development)
+
+  - `sizevar` - string - the name of the variable used to calculate the
+    size of the hex using the `sizeSummaryFunction`
+
+  - `colorSummaryFunction` - string - choose a function from ‘count’,
+    ‘sum’, ‘max’, ‘min’, ‘mean’, or ‘median’ or give a valid JS
+    function (in development)
+
+  - `colorvar` - string - the name of the variable used to calculate the
+    color of the hex using the `colorSummaryFunction`

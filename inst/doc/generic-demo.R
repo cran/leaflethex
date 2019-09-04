@@ -1,0 +1,39 @@
+## ---- include = FALSE----------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+## ----setup---------------------------------------------------------------
+library(leaflethex)
+
+## ------------------------------------------------------------------------
+library(leaflethex)
+library(tibble)
+
+df = tibble(
+  lat = rnorm(100),
+  lng = rnorm(100),
+  size = runif(100, 5, 20),
+  color = sample(colors(), 100)
+)
+df2 <- tibble(
+  lat =  42.9634 + stats::rnorm(100),
+  lng = -85.6681 + stats::rnorm(100),
+  size = runif(100, 5, 20),
+  color = sample(colors(), 100)
+)
+addJS <- 
+  pluginFactory(
+    "Some JS Plugin", 
+    system.file("js", "", package = "leaflethex"), "hexbin.js", "deps.js", stylesheet="hexbin.css")
+
+leaflet(df2, width = 600, height = 300) %>% 
+  addTiles() %>% 
+  addCircles(color = "red") %>%
+  addJS(radius = 20, highEndColor = "yellow")
+
+## ------------------------------------------------------------------------
+args(addJS)
+args(addHexbin)
+

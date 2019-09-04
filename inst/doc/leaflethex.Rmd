@@ -1,0 +1,174 @@
+---
+title: "leaflethex"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{leaflethex}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6, fig.height = 3
+)
+```
+
+```{r setup, include = FALSE}
+library(leaflethex)
+library(tibble)
+library(dplyr)
+```
+
+## The Purpose for Leaflethex
+
+Leaflethex is primarily a proof of concept for rendering leafletJS functionality in R by running the javascript though an htmlwidget.
+
+It also contains a function `addHexbin()` for applying a hexbin layer to a leaflet map
+
+## How to use leaflethex for the Hexbin Layer
+
+If you are interested in using the hexbin plugin that comes along with
+leaflethex, the function `addHexbin()` can be used which has a similar API to
+the rest of the Leaflet R functions that add layers to leaflet maps such as
+`leaflet::addCircles()`, `leaflet::addMarkers()`, etc.
+
+The default use bins geopoints into hexagonal regions and used 
+size and/or color to represent the number of points in each bin.
+
+```{r}
+# Randomly generated data points
+data_points <- tibble(
+  lat =  42.9634 + rnorm(1000),
+  lng = -85.6681 + rnorm(1000)
+)
+# Create map with data points
+leaflet::leaflet(data_points) %>% addTiles() %>% addHexbin()
+```
+
+## Features of addHexbin()
+
+
+Radius, color, and opacity of hexagon are easily modified
+using arguments to `addHexbin()`. As with other leaflet functions,
+data is inherited from the map unless specified with the `data` argument.
+
+For a more complete description of `addHexbin()`, see the function
+help and package vignettes.
+
+
+```{r}
+data_points <- tibble(
+  lat =  42.9634 + rnorm(1000),
+  lng = -85.6681 + rnorm(1000)
+)
+data_points2 <- tibble(
+  lat =  42.9634 + rnorm(1000),
+  lng = -95.6681 + rnorm(1000)
+)
+leaflet::leaflet(rbind(data_points, data_points2)) %>% 
+         addTiles() %>% 
+         addHexbin(data = data_points) %>% 
+         addHexbin(data = data_points2, 
+                    lowEndColor  = "yellow", 
+                    highEndColor = "red")
+```
+
+## Using leaflethex for arbitrary LeafletJS functionality: Overview
+
+Leaflethex also provides a mechanism for creating hooks to arbitrary
+javascript code via `pluginFactory()`. To modify existing javascript 
+code that modfies a leaflet map so that it can be used from within R
+using the leaflet R package 
+
+#. Load the JS code that modifies a map object. 
+
+    Place this code in a new file and place the file in a new folder. (In the example below, this file will be called `example.js`.)
+#. Edit the JS code to replace any reference of `map` with the keyword `this` so that the loaded plugin can attach to the given map instead of creating a new map. 
+
+    Note: if the JS Code makes extensive use of DOM manipulation more work may be needed to make it compatible.
+#. Download the libraries that the code depends on such as jquery, leaflet, d3, etc. as .js files.
+#. Combine these .js files into a single .js file. 
+
+    (In the example below, this file will be called `deps.js`.)
+#. Create the plugin with `pluginFactory()`.
+
+    ```{r eval=FALSE}
+      new_plugin <- 
+        pluginFactory(
+          "Name of Plugin", 
+          "path/of/parent/folder/", 
+          "leaflet-script.js", 
+          "deps.js", 
+          "stylesheet.css")
+      # Create a basic leaflet map
+      leaflet::leaflet() %>% addTiles() %>% new_plugin()
+    ```
+
+## Step by Step how to create a new plugin with `pluginFactory()`
+
+#. In javascript
+
+    a. Copy the javascript code into a .js file then wrap the code in a `function()` as below
+
+        ```{js, eval = FALSE}
+        function(el, x, data = null) {
+          // Your JS Code
+        }
+        ```
+    
+    b. Now modify this file to use the data argument as needed, this argument will be used for data points but also mapping options like radius or color or anything else one needs to pass into the js function.
+
+
+#. In R.
+
+    a. create a plugin with the `pluginFactory()` function.
+
+        ```{r eval=FALSE}
+        addPluginName <-
+            pluginFactory(
+                    "Name of Plugin",
+                    system.file("folder_containing_js_file", ""),
+                    "name_of_file.js", 
+                    "dependencies_required.js", 
+                    "stylesheet_for_js.css")
+        ```
+        
+        When adding style sheets, make sure the .css file is in the same location as the js folder
+    
+    a. Apply the plugin to the map
+
+        ```{r eval=FALSE}
+          map %>% addPluginName(data = mapData,
+                                radius = radius,
+                                opacity = opacity,
+                                duration = duration,
+                                lowEndColor = lowEndColor,
+                                highEndColor = highEndColor)
+        ```
+        Using the leaflethex plugin parameters as an example, any parameters passed in to the addPluginName() function will be taken as dots and translated into a JSON object in the javascript side.
+
+    a. The object appears in the JS World as a JSON Object named `data`
+
+    ![JS-Data](jsdata.png)
+    
+#. Differences between creating the plugin locally and creating a new package
+    
+    When simply creating the plugin and running it locally the `pluginFactory()` will work as expected in this example; however, when creating a package there are a few things that need tweaking:
+    
+      a. Any time `system.file()` is used, the `package` parameter must be set to the new package like so:
+      
+        ```{r eval=FALSE}
+        addPluginName <-
+            pluginFactory(
+                    "Name of Plugin",
+                    system.file("folder_containing_js_file", "", package = "your_package_name"), # Add the package parameter
+                    "name_of_file.js", 
+                    "dependencies_required.js", 
+                    "stylesheet_for_js.css")
+        ```
+      
+      a. Secondly, the js folder must be inside the `inst` folder in order to be installed when the package is installed, otherwise Rstudio will complain that the js folder doesn't exist.
+
+
